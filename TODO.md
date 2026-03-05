@@ -59,14 +59,14 @@
 
 ## Phase 6: デプロイ
 
-- [ ] GitHubリポジトリを作成してプッシュする
-- [ ] Vercelプロジェクトを作成してGitHubと連携する
-- [ ] Vercelに環境変数を設定する
+- [x] GitHubリポジトリを作成してプッシュする
+- [x] Vercelプロジェクトを作成してGitHubと連携する
+- [x] Vercelに環境変数を設定する
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
   - `SUPABASE_SERVICE_ROLE_KEY`
   - `CRON_SECRET`
-- [ ] 本番デプロイして動作確認する
+- [x] 本番デプロイして動作確認する
 - [ ] Cron Jobが正しく動作するか確認する（Vercelダッシュボードのログで確認）
 
 ## Phase 7: 動作確認・調整

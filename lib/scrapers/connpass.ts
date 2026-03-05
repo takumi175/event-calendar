@@ -76,10 +76,18 @@ export async function fetchConnpassEvents(): Promise<EventInsert[]> {
   for (const ym of months) {
     let start = 1
     while (true) {
-      const res = await axios.get<ConnpassResponse>(BASE_URL, {
-        params: { ym, count: 100, start, order: 2 },
-        timeout: 10000,
-      })
+      let res
+      try {
+        res = await axios.get<ConnpassResponse>(BASE_URL, {
+          params: { ym, count: 100, start, order: 2 },
+          timeout: 10000,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; EventCalendarBot/1.0)' },
+        })
+      } catch (err) {
+        // connpass API v1 は CloudFront WAF によりサーバーサイドからブロックされる場合がある
+        console.warn(`[connpass] ym=${ym} failed:`, err instanceof Error ? err.message : err)
+        break
+      }
       const { events: items, results_available, results_returned } = res.data
       events.push(...items.map(mapToEventInsert))
 

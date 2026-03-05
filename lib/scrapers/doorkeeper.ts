@@ -3,11 +3,6 @@ import type { EventInsert } from '../types'
 
 const BASE_URL = 'https://api.doorkeeper.jp/events'
 
-type DoorkeeperTicketType = {
-  price: number
-  name: string
-}
-
 type DoorkeeperEventItem = {
   event: {
     id: number
@@ -19,8 +14,7 @@ type DoorkeeperEventItem = {
     address: string | null
     public_url: string
     ticket_limit: number | null
-    ticket_types: DoorkeeperTicketType[]
-    group: { name: string } | null
+    group: number | null
   }
 }
 
@@ -43,11 +37,6 @@ function mapToEventInsert(item: DoorkeeperEventItem): EventInsert {
   const isOnline = !e.venue_name && !e.address
   const region = isOnline ? 'オンライン' : detectRegion(e.venue_name, e.address)
 
-  const minPrice = e.ticket_types.length > 0
-    ? Math.min(...e.ticket_types.map((t) => t.price))
-    : null
-  const isFree = minPrice !== null ? minPrice === 0 : null
-
   return {
     title: e.title,
     description: e.description ?? null,
@@ -58,8 +47,8 @@ function mapToEventInsert(item: DoorkeeperEventItem): EventInsert {
     external_id: String(e.id),
     location: e.venue_name ?? (isOnline ? 'オンライン' : null),
     is_online: isOnline,
-    is_free: isFree,
-    price: minPrice,
+    is_free: null,
+    price: null,
     tags: null,
     region,
   }
@@ -79,9 +68,10 @@ export async function fetchDoorkeeperEvents(): Promise<EventInsert[]> {
       params: { since, until, per_page: 100, page, locale: 'ja' },
       timeout: 10000,
     })
-    if (res.data.length === 0) break
-    events.push(...res.data.map(mapToEventInsert))
-    if (res.data.length < 100) break
+    const items = Array.isArray(res.data) ? res.data : []
+    if (items.length === 0) break
+    events.push(...items.map(mapToEventInsert))
+    if (items.length < 100) break
     page++
   }
 

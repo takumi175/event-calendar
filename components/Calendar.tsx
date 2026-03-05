@@ -68,20 +68,25 @@ export default function Calendar({ events, year, month }: Props) {
 
   const monthLabel = `${year}年${month}月`
 
+  // モバイル用: イベントを日付順に並べた配列
+  const sortedDays = Object.keys(eventsByDay)
+    .map(Number)
+    .sort((a, b) => a - b)
+
   return (
     <>
       {/* ヘッダー */}
       <div className="mb-4 flex items-center justify-between">
         <button
           onClick={() => navigateMonth(-1)}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
         >
           ← 前月
         </button>
         <h2 className="text-lg font-bold text-gray-900">{monthLabel}</h2>
         <button
           onClick={() => navigateMonth(1)}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
         >
           翌月 →
         </button>
@@ -90,8 +95,45 @@ export default function Calendar({ events, year, month }: Props) {
       {/* イベント件数 */}
       <p className="mb-3 text-sm text-gray-500">{events.length} 件のイベント</p>
 
-      {/* カレンダーグリッド */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      {/* モバイル: リスト表示 */}
+      <div className="md:hidden space-y-3">
+        {sortedDays.length === 0 && (
+          <p className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-400">
+            この月のイベントはありません
+          </p>
+        )}
+        {sortedDays.map((day) => {
+          const dayEvts = eventsByDay[day]
+          const dateLabel = `${month}/${day}(${DAY_LABELS[new Date(year, month - 1, day).getDay()]})`
+          return (
+            <div key={day} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className={`px-4 py-2 text-xs font-semibold ${
+                isToday(day) ? 'bg-indigo-600 text-white' : 'bg-gray-50 text-gray-500'
+              }`}>
+                {dateLabel}
+              </div>
+              <div className="divide-y divide-gray-100">
+                {dayEvts.map((event) => (
+                  <button
+                    key={event.id}
+                    onClick={() => setSelectedEvent(event)}
+                    className="w-full px-4 py-3 text-left hover:bg-indigo-50 transition-colors"
+                  >
+                    <p className="text-sm font-medium text-gray-900 line-clamp-2">{event.title}</p>
+                    <p className="mt-0.5 text-xs text-gray-500">
+                      {new Date(event.start_at).getHours().toString().padStart(2,'0')}:{new Date(event.start_at).getMinutes().toString().padStart(2,'0')}
+                      {event.location ? ` · ${event.location}` : ''}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* デスクトップ: カレンダーグリッド */}
+      <div className="hidden md:block rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         {/* 曜日ヘッダー */}
         <div className="grid grid-cols-7 border-b border-gray-200">
           {DAY_LABELS.map((label, i) => (
@@ -156,14 +198,14 @@ export default function Calendar({ events, year, month }: Props) {
         </div>
       </div>
 
-      {/* モーダル */}
+      {/* モーダル（モバイル・デスクトップ共通） */}
       {selectedEvent && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
           onClick={() => setSelectedEvent(null)}
         >
           <div
-            className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl"
+            className="w-full max-h-[90vh] overflow-y-auto rounded-t-2xl bg-white p-6 shadow-xl sm:max-w-lg sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-start justify-between gap-4">
