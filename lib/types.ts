@@ -1,4 +1,4 @@
-export type EventSource = 'connpass' | 'doorkeeper' | 'techplay'
+export type EventSource = 'connpass' | 'doorkeeper' | 'techplay' | 'ical_calendar'
 
 export type Event = {
   id: string
