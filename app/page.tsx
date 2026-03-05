@@ -1,65 +1,65 @@
-import Image from "next/image";
+import { Suspense } from 'react'
+import { supabase } from '@/lib/supabase'
+import Calendar from '@/components/Calendar'
+import FilterPanel from '@/components/FilterPanel'
+import type { Event } from '@/lib/types'
 
-export default function Home() {
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default async function Home({ searchParams }: PageProps) {
+  const params = await searchParams
+  const now = new Date()
+  const year = parseInt(String(params.year ?? now.getFullYear()), 10)
+  const month = parseInt(String(params.month ?? (now.getMonth() + 1)), 10)
+
+  const startOf = new Date(year, month - 1, 1).toISOString()
+  const endOf = new Date(year, month, 1).toISOString()
+
+  let query = supabase
+    .from('events')
+    .select('id, title, description, start_at, end_at, url, source, location, is_online, is_free, price, tags, region')
+    .gte('start_at', startOf)
+    .lt('start_at', endOf)
+    .order('start_at', { ascending: true })
+
+  const tags = params.tags ? String(params.tags).split(',').filter(Boolean) : []
+  if (tags.length > 0) {
+    query = query.overlaps('tags', tags)
+  }
+  if (params.is_online !== undefined) {
+    query = query.eq('is_online', params.is_online === 'true')
+  }
+  if (params.is_free !== undefined) {
+    query = query.eq('is_free', params.is_free === 'true')
+  }
+  if (params.region) {
+    query = query.eq('region', String(params.region))
+  }
+
+  const { data } = await query
+  const events = (data ?? []) as unknown as Event[]
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-screen bg-gray-50">
+      <header className="border-b border-gray-200 bg-white px-4 py-4 shadow-sm">
+        <div className="mx-auto max-w-7xl">
+          <h1 className="text-xl font-bold text-gray-900">エンジニアイベントカレンダー</h1>
+          <p className="mt-0.5 text-sm text-gray-500">
+            大学生から参加できるエンジニア向けイベントを毎日自動収集
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </header>
+
+      <div className="mx-auto max-w-7xl px-4 py-6">
+        <Suspense>
+          <FilterPanel />
+        </Suspense>
+        <Suspense>
+          <Calendar events={events} year={year} month={month} />
+        </Suspense>
+      </div>
     </div>
-  );
+  )
 }
