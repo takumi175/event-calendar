@@ -54,8 +54,9 @@ function detectRegion(text: string): string | null {
 
 export async function fetchICalCalendarEvents(): Promise<EventInsert[]> {
   const res = await axios.get<string>(ICS_URL, {
-    timeout: 15000,
+    timeout: 55000,
     responseType: 'text',
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; EventCalendarBot/1.0)' },
   })
 
   const content = unfoldLines(res.data)
